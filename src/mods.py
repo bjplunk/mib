@@ -1,16 +1,53 @@
 import importlib, os
 
 class module:
-    def __init__(self, name, module):
+    def __init__(self, irc, name, module):
+        print("Loading module: " + name)
+        self.irc = irc
         self.name = name
         self.active = False
         self.module = module
+        if hasattr(module, 'get_commands'):
+            self.commands = module.get_commands() # get a list of commands the module registers
+        else:
+            self.commands = []
 
-        print("loaded module: " + name)
+        self.call_func('init', irc)
+
+        if module.active_by_default:
+            self._active_toggle(True)
+
+    def call_func(self, name, *args):
+        if hasattr(self.module, name):
+            getattr(self.module, name)(*args)
+
+    def activate(self):
+        if self.active:
+            return
+        self._active_toggle(True)
+
+    def deactivate(self):
+        if not self.active:
+            return
+        self._active_toggle(False)
+
+    def _active_toggle(self, on):
+        if on:
+            for cmd in self.commands:
+                args = cmd['args'] if 'args' in cmd else []
+                optargs = cmd['optargs'] if 'optargs' in cmd else []
+                help = cmd['help'] if 'help' in cmd else ""
+                self.irc.commands.register_cmd(cmd['name'], cmd['type'], cmd['priv'], cmd['func'], args, optargs, help)
+            self.call_func('activate')
+        else:
+            for cmd in self.commands:
+                self.irc.commands.unregister_cmd(cmd.name)
+            self.call_func('deactivate')
 
 class modules:
-    def __init__(self):
+    def __init__(self, irc):
         self.mods = []
+        self.irc = irc
 
         files = []
 
@@ -29,19 +66,23 @@ class modules:
 
         for f in files:
             mod = getattr(__import__("modules." + f), f)
-            self.mods.append(module(f, mod))
+            self.mods.append(module(self.irc, f, mod))
+
+    def get_module(self, name):
+        for mod in self.mods:
+            if mod.name == name:
+                return mod
+        return None
 
     # invoke function for ALL modules
     def invoke_all(self, name, *args):
         for mod in self.mods:
-            if hasattr(mod.module, name):
-                get_attr(mod.module, name)(*args);
+            mod.call_func(name, *args)
 
     # invoke function for all loaded modules
     def invoke(self, name, *args):
         for mod in self.mods:
             if mod.active == False:
                 continue
-            if hasattr(mod.module, name):
-                get_attr(mod.module, name)(*args);
+            mod.call_func(name, *args)
 

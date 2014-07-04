@@ -1,0 +1,16 @@
+Modular IRC Bot is an irc bot written in python, intended to be easy to extend
+and customize.
+
+MIB is licensed under the MIT License (see LICENSE for details).
+
+To start MIB, simply invoke the main.py script. MIB is intended to be used with
+Python 3.2 and up, but might work for older 3 versions as well.
+
+# how to start bot and print usage notes
+python3.2 src/main.py --help
+
+To extend the bot's functionality you can create modules. Modules are located
+in src/modules/. Inside of said directory you will find a README file
+describing the process.
+
+The MIB repository can be found online at: https://bitbucket.org/shiro91/mib

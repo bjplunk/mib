@@ -1,1 +1,163 @@
-TODO: write this readme
+Index:
+1. Introduction
+2. Basics of a module
+3. Callbacks
+4. Base functionality
+5. Default modules
+6. Extra notes
+
+1. Introduction
+Any .py file that does not start with a period or underscore will be processed
+as a module by MIB if it's located in src/modules/. A module can then implement
+certain functionality and extend the bot's behavior. The extensions happen
+two-fold, one by optional callback functions that get invoked when an action
+happens, and two by using the irc handle exposed to modules. This README file
+serves as documentation for how to write a module.
+
+2. Basics of a module
+A module needs to be put in src/modules/, needs to not start with a period or
+underscore and needs to have the .py file-extension.
+
+A module defines a global boolean value named "active_by_default" which
+indicates if the module should be activated by default. Modules that are not
+active are loaded into memory, but not currently operating.
+
+There are two functions, while optional, most modules will surely want to
+provide. One is 'init', and the other is 'get_commands'. Below is an example
+that shows a good starting-point for most modules:
+
+#src/modules/mymodule.py
+active_by_default = True
+irc_handle = None
+
+# init is invoked to provide us with a handle to the base irc module
+def init(irc):
+    irc_handle = irc
+
+# get_commands provide the commands this module implements
+def get_commands():
+    return [
+        {'name': "test", 'type': "both", 'priv': 0, 'func': test_callback,
+        'args': ["input"], 'help': "just a bit of testing, really"}
+    ]
+
+3. Callbacks
+activate():
+    Invoked when module is activated. The core functionality is guaranteed
+    loaded at this point, but other modules may or may not be depending on
+    initialization order. This function should be used to set state and
+    initialize data.
+chan_msg(channel, user, message)
+    params:
+        channel: channels.channel object
+        user:    channels.irc_user object
+        message: message user wrote in channel
+    Invoked when someone writes a message in a channel the bot is idling in.
+
+chan_join(channel, user)
+    params:
+        channel: channels.channel object
+        user:    channels.irc_user object
+    Invoked when a user joins a channel the bot is idling in.
+chan_quit(channel, user, mode)
+    params:
+        channel: channels.channel object
+        user:    channels.irc_user object
+        mode:    "leave" if leaving channel, or "quit" if quitting irc
+    Invoked when a user leaves a channel the bot is idling in.
+deactivate():
+    Called when module is deactivated.
+get_commands()
+    return:
+        A list of dictionaries. Each dictionary in the list define a command.
+        The values of each dictionary in the list is:
+        name:       name of command, needs to be unique across all modules,
+                    cannot contain spaces
+        type:       "chan": only listen in channels for this command
+                    "priv": only listen in private for this command
+                    "both": listen in channels and private for this command
+        priv:       required privilege. 0: everyone, >0: increasing required
+                    privilege (requires the auth module, or only 0 priv
+                    commands will be usable)
+        func:       callback function that will be invoked when the command is
+                    used, see "callback requirements" below
+        args:       OPTIONAL define a list of mandatory arguments for the
+                    command, see "receiving arguments" below
+        optargs:    OPTIONAL define a list of optional arguments for the
+                    command, see "receiving arguments" below
+        help:       OPTIONAL define a help text to inform users how to use the
+                    command (requires the help module)
+    callback requirements:
+        The callback must take 3 arguments; the channel object it was posted in
+        (None if private), the irc_user object that wrote it, and the parameter
+        object.
+    receiving arguments:
+        You receive arguments through the commands.cmd_params object, each arg
+        and optarg you specified when registering the command will be present.
+        optargs are set to None if they were not provided.
+        For example:
+            def callback(channel, user, params):
+                print(params.arg_name)
+                if params.opt_arg != None:
+                    print(params.opt_arg)
+init(irc):
+    params:
+        irc: handle to the base irc module
+    Invoked when the bot is started, whether your module is active or not. This
+    is the time to save the irc-handle. Little else should actually be done in
+    here.
+
+4. Base functionality
+Modules access the rest of the environment through the irc-handle they receive
+through the init callback. Below are listed the functions exposed to modules.
+If a function is not listed here, it's not intended to be used by modules.
+
+irc.chan_msg(channel, msg, queue=2, user=None)
+    params:
+        chan:   channels.channel object
+        msg:    string to be sent
+        queue:  0: instant (don't use this), 1: critical message, 2: standard
+        user:   channels.irc_user object of user that is the cause of this
+                message to be sent (allows blacklisting if he's spamming)
+    Sends a message to the channel.
+irc.priv_msg(user, msg, queue=2)
+    params:
+        user:   channels.irc_user object
+        msg:    string to be sent
+        queue:  0: instant (don't use this), 1: critical message, 2: standard
+    Send a message in private to the user.
+irc.modules.get_module(name):
+    params:
+        name:   name of module, this is without the .py file ext.
+    returns:
+        modules.module object with given name
+        or
+        None if no such module was found
+    Get module by name. This will get active and deactive modules alike. Making
+    sure to only use active modules is up to the user.
+irc.channels.find_user(nick):
+    params:
+        nick:   nick of user
+    returns:
+        channels.irc_user object with given nick
+    Search for user with nick in channels we're idling in.
+irc.channels.channels:
+    Dictionary of all channels.channel objects we have open.
+    DO NOT MODIFY ITS CONTENT. TREAT AS READ-ONLY.
+irc.commands.cmds:
+    Dictionary of all commands.bot_cmd objects that are registered from active
+    modules.
+    DO NOT MODIFY ITS CONTENT. TREAT AS READ-ONLY.
+
+5. Default modules
+TODO
+
+6. Extra notes
+To make use of privileges in your module (apart from commands where it is
+handled for you), you can make use of the Auth module. See section 4 and 5 for
+details on how to use the Auth module.
+
+When sending messages it's important to consider the importance of what your
+message is delivering. If in doubt, mark your message as a non-critical
+message. The critical message section is supposed to be lower response-time,
+but if used incorrectly (i.e., not sparsingly) by modules it can become slow.

@@ -32,8 +32,8 @@ class irc:
         if hasattr(self, 'sock'):
             self.sock.close();
 
-    def chan_msg(self, chan, msg, queue=2, user=None):
-        s = "PRIVMSG " + chan + " :" + msg
+    def chan_msg(self, channel, msg, queue=2, user=None):
+        s = "PRIVMSG " + channel.name + " :" + msg
         self.send(s, queue, user)
 
     def priv_msg(self, user, msg, queue=2):
@@ -193,4 +193,14 @@ class irc:
 
         # pass raw message onto all active modules
         self.modules.invoke('raw_msg', msg)
+
+        # user to user private messages
+        if msg.cmd == "PRIVMSG" and msg.cmd_params[0][0] != "#" and msg.cmd_params[0][0] != "&":
+            # only handle private user to user messages if the user is in a channel we are in as well
+            nick = msg.cmd_params[0][1:]
+            user = self.channels.find_user(nick)
+            if user != None:
+                message = msg.cmd_params[1]
+                self.commands.priv_msg(user, message)
+                self.modules.invoke('priv_msg', user, message)
 

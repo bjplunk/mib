@@ -27,7 +27,7 @@ class commands:
     def unregister_cmd(self, cmd):
         del self.cmds[cmd]
 
-    def chan_msg(self, chan, user, msg):
+    def chan_msg(self, channel, user, msg):
         if msg[0] != self.irc.command_char:
             return
 
@@ -48,15 +48,13 @@ class commands:
         if cmd_obj.type != "chan" and cmd_obj.type != "both":
             return
 
-        # check so user has privileges for this command
-        auth = self.irc.modules.get_module("auth")
-        if not ((auth == None and cmd_obj.priv == 0) or auth.module.has_priv(user, cmd_obj.priv)):
+        if not self.irc.has_privilege(user, cmd_obj.priv):
             return
 
         # invoke command
-        params = self.get_params(self.cmds[cmd], msg)
+        params = self.get_params(cmd_obj, msg)
         if params != None:
-            self.cmds[cmd].func(user, params)
+            cmd_obj.func(channel, user, params)
 
     def priv_msg(self, user, msg):
         if msg[0] != self.irc.command_char:
@@ -74,19 +72,18 @@ class commands:
 
         if cmd not in self.cmds:
             return
+        cmd_obj = self.cmds[cmd]
 
-        if self.cmds[cmd].type != "priv" and seld.cmds[cmd].type != "both":
+        if cmd_obj.type != "priv" and cmd_obj.type != "both":
             return
 
-        # check so user has privileges for this command
-        auth = self.irc.modules.get_module("auth")
-        if not ((auth == None and cmd_obj.priv == 0) or auth.module.has_priv(user, cmd_obj.priv)):
+        if not self.irc.has_privilege(user, cmd_obj.priv):
             return
 
         # invoke command
-        params = self.get_params(self.cmds[cmd], msg)
+        params = self.get_params(cmd_obj, msg)
         if params != None:
-            self.cmds[cmd].func(user, params)
+            cmd_obj.func(None, user, params)
 
     def next_arg(msg):
         i =  msg.find(" ")
@@ -107,7 +104,7 @@ class commands:
         for arg in cmd.optargs:
             val = None
             if len(msg) > 0:
-                val, msg = next_arg(msg)
+                val, msg = commands.next_arg(msg)
             setattr(params, arg, val)
 
         return params

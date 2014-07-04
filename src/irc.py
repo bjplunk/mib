@@ -40,6 +40,14 @@ class irc:
         s = "PRIVMSG " + user.nick + " :" + msg
         self.send(s, queue, user)
 
+    def has_privilege(self, user, priv):
+        if priv == 0:
+            return True
+        auth = self.modules.get_module("auth")
+        if auth == None or auth.active == False:
+            return False
+        return auth.module.has_priv(user, priv)
+
     # queue: 0: instant, 1: critical messages, 2: non-critical messages, else: spammer queue (size limited)
     # user: user that is the reason we are sending this message, if applicable => enables the spam limit
     def send(self, s, queue=2, user=None):
@@ -195,9 +203,9 @@ class irc:
         self.modules.invoke('raw_msg', msg)
 
         # user to user private messages
-        if msg.cmd == "PRIVMSG" and msg.cmd_params[0][0] != "#" and msg.cmd_params[0][0] != "&":
+        if msg.cmd == "PRIVMSG" and msg.cmd_params[0] == self.nick and msg.prefix.find("!") != -1:
             # only handle private user to user messages if the user is in a channel we are in as well
-            nick = msg.cmd_params[0][1:]
+            nick, _ = msg.prefix.split("!", 1)
             user = self.channels.find_user(nick)
             if user != None:
                 message = msg.cmd_params[1]

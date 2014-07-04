@@ -28,11 +28,12 @@ that shows a good starting-point for most modules:
 
 #src/modules/mymodule.py
 active_by_default = True
-irc_handle = None
+irc = None
 
 # init is invoked to provide us with a handle to the base irc module
-def init(irc):
-    irc_handle = irc
+def init(irc_handle):
+    global irc
+    irc = irc_handle
 
 # get_commands provide the commands this module implements
 def get_commands():
@@ -126,6 +127,14 @@ irc.priv_msg(user, msg, queue=2)
         msg:    string to be sent
         queue:  0: instant (don't use this), 1: critical message, 2: standard
     Send a message in private to the user.
+irc.has_privilege(user, priv)
+    params:
+        user:   channels.irc_user object
+        priv:   privilege (number that is 0 or bigger)
+    returns:
+        True if user has that privilege level
+        False if user does not have that privilege level
+    Checks user privilege. Requires the auth module for any priv above 0.
 irc.modules.get_module(name):
     params:
         name:   name of module, this is without the .py file ext.

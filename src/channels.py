@@ -36,8 +36,8 @@ class channels:
 
     # returns a user by nick from any of the channels we're in
     def find_user(self, nick):
-        for chan in self.channels:
-            u = chan.user(nick)
+        for _, channel in self.channels.items():
+            u = channel.user(nick)
             if u != None:
                 return u
         return None

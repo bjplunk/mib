@@ -50,19 +50,19 @@ activate():
     initialize data.
 chan_msg(channel, user, message)
     params:
-        channel: channels.channel object
+        channel: channels.irc_channel object
         user:    channels.irc_user object
         message: message user wrote in channel
     Invoked when someone writes a message in a channel the bot is idling in.
 
 chan_join(channel, user)
     params:
-        channel: channels.channel object
+        channel: channels.irc_channel object
         user:    channels.irc_user object
     Invoked when a user joins a channel the bot is idling in.
 chan_quit(channel, user, mode)
     params:
-        channel: channels.channel object
+        channel: channels.irc_channel object
         user:    channels.irc_user object
         mode:    "leave" if leaving channel, or "quit" if quitting irc
     Invoked when a user leaves a channel the bot is idling in.
@@ -103,10 +103,15 @@ get_commands()
                     print(params.opt_arg)
 init(irc):
     params:
-        irc: handle to the base irc module
+        irc:        handle to the base irc module
     Invoked when the bot is started, whether your module is active or not. This
     is the time to save the irc-handle. Little else should actually be done in
     here.
+user_gone(user):
+    pararms:
+        user:       channels.irc_user object
+    Invoked when a user disappears completely from the bot's idling channels.
+    This callback is intended to be used to deregister users, etc.
 
 4. Base functionality
 Modules access the rest of the environment through the irc-handle they receive
@@ -150,8 +155,19 @@ irc.channels.find_user(nick):
     returns:
         channels.irc_user object with given nick
     Search for user with nick in channels we're idling in.
+irc.channels.find_user_by_uid(uid):
+    params:
+        id:     channels.irc_user.uid
+    returns:
+        channels.user object if user with given uid exists
+        or
+        None if no such user exists
+    Get user by id. Uid is unique to each user and cannot be reused during this
+    session. Note that uid is NOT unique across multiple bot sessions. This is
+    the intend reference for modules to refer to users, as the uid stays the same
+    even if the user's nick or user changes.
 irc.channels.channels:
-    Dictionary of all channels.channel objects we have open.
+    Dictionary of all channels.irc_channel objects we have open.
     DO NOT MODIFY ITS CONTENT. TREAT AS READ-ONLY.
 irc.commands.cmds:
     Dictionary of all commands.bot_cmd objects that are registered from active
@@ -170,3 +186,14 @@ When sending messages it's important to consider the importance of what your
 message is delivering. If in doubt, mark your message as a non-critical
 message. The critical message section is supposed to be lower response-time,
 but if used incorrectly (i.e., not sparsingly) by modules it can become slow.
+
+If you need to "remember" users you want to save the channels.user.uid
+identifier. This identifier is unique for the current session (but not for
+future sessions). This is the intended way to refer to users. In other words,
+if you need to save the user of an action, don't save the user reference, but
+instead save the uid. You use irc.channels.find_user_by_uid(uid) to retrieve
+the user.
+
+Privilege levels range from 0 to 99 for normal users. Privilege 100 means the
+root account only. The root account can either be disabled (or if enabled),
+requires a password passed as an argument when the bot is started.

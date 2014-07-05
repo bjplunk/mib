@@ -7,12 +7,13 @@ class module:
         self.name = name
         self.active = False
         self.module = module
+
+        self.call_func('init', irc)
+
         if hasattr(module, 'get_commands'):
             self.commands = module.get_commands() # get a list of commands the module registers
         else:
             self.commands = []
-
-        self.call_func('init', irc)
 
         if module.active_by_default:
             self._active_toggle(True)

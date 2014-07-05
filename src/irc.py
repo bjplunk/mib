@@ -3,13 +3,14 @@ import time, socket
 import commands, channels, mods, irc_msg
 
 class irc:
-    def __init__(self, host, port, chans):
+    def __init__(self, host, port, chans, rootpwd):
         self.host = host
         self.port = port
         self.nick = "tester"
         self.command_char = "!"
         self.init_phase = True
         self.auto_join = chans
+        self.root_pwd = rootpwd
 
         # core functionality (available for all modules)
         self.channels = channels.channels(self)
@@ -208,6 +209,9 @@ class irc:
             nick, _ = msg.prefix.split("!", 1)
             user = self.channels.find_user(nick)
             if user != None:
+                if user.hostmask != msg.prefix:
+                    user.hostmask = msg.prefix
+                user.extract_hostname(msg.prefix)
                 message = msg.cmd_params[1]
                 self.commands.priv_msg(user, message)
                 self.modules.invoke('priv_msg', user, message)

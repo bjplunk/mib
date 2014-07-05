@@ -11,6 +11,9 @@ class bot_cmd:
         self.optargs = optargs
         self.help = help
 
+        if priv > 100:
+            raise IndexError("Command privilege cannot exceed 100.")
+
 class cmd_params:
     pass
 
@@ -52,7 +55,7 @@ class commands:
             return
 
         # invoke command
-        params = self.get_params(cmd_obj, msg)
+        params = self.get_params(user, cmd_obj, msg)
         if params != None:
             cmd_obj.func(channel, user, params)
 
@@ -81,7 +84,7 @@ class commands:
             return
 
         # invoke command
-        params = self.get_params(cmd_obj, msg)
+        params = self.get_params(user, cmd_obj, msg)
         if params != None:
             cmd_obj.func(None, user, params)
 
@@ -89,14 +92,17 @@ class commands:
         i =  msg.find(" ")
         if i == -1:
             return msg, ""
-        return msg[:i], msg[i:]
+        return msg[:i], msg[i+1:]
 
-    def get_params(self, cmd, msg):
+    def get_params(self, user, cmd, msg):
         params = cmd_params()
 
         for arg in cmd.args:
             if len(msg) == 0:
-                # XXX: report error
+                s = "Missing mandatory arguments."
+                if self.irc.modules.get_module("help") != None:
+                    s += " Use !help <command> to receive help on how to use the command."
+                self.irc.priv_msg(user, s, 1)
                 return None
             val, msg = commands.next_arg(msg)
             setattr(params, arg, val)

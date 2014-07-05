@@ -7,7 +7,7 @@ def init(irc):
     global irc_handle
     irc_handle = irc
 
-def test_callback(user, params):
+def test_callback(channel, user, params):
     arg = params.input if hasattr(params, 'input') else "none"
     for i in range(0, 25):
         irc_handle.chan_msg("#bot", str(i), user=user)

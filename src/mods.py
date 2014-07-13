@@ -40,10 +40,12 @@ class module:
                 help = cmd['help'] if 'help' in cmd else ""
                 self.irc.commands.register_cmd(cmd['name'], cmd['type'], cmd['priv'], cmd['func'], args, optargs, help)
             self.call_func('activate')
+            self.active = True
         else:
             for cmd in self.commands:
                 self.irc.commands.unregister_cmd(cmd.name)
             self.call_func('deactivate')
+            self.active = False
 
 class modules:
     def __init__(self, irc):

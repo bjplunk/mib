@@ -3,10 +3,10 @@ import time, socket
 import commands, channels, mods, irc_msg
 
 class irc:
-    def __init__(self, host, port, chans, rootpwd):
+    def __init__(self, host, nick, port, chans, rootpwd):
         self.host = host
         self.port = port
-        self.nick = "tester"
+        self.nick = nick
         self.command_char = "!"
         self.init_phase = True
         self.auto_join = chans
@@ -142,8 +142,8 @@ class irc:
         self.sock.connect((self.host, self.port))
        
         # XXX: pass message
-        self.send("NICK tester", 0)
-        self.send("USER tester 0 * :Tester Jackson", 0)
+        self.send("NICK " + self.nick, 0)
+        self.send("USER " + self.nick + " 0 * :Tester Jackson", 0)
 
         self.net_loop()
 

@@ -65,18 +65,18 @@ class channels:
         return None
 
     def raw_msg(self, msg):
-        # NOTE
-        # RFC1459 does not broadcast a JOIN on successful joins, we rely on RPL_NAMREPLY,
-        # to signify a new channel. This would break if we start using the NAMES command
-
         if msg.cmd == "353":
+            # add the channel if it's not yet in self.channels
             chan_name = msg.cmd_params[2]
             if chan_name not in self.channels:
                 self.channels[chan_name] = irc_channel(chan_name)
+            # add all listed users
             nicks = [msg.cmd_params[3]]
             if nicks[0].find(" ") != -1:
                 nicks = nicks[0].split(" ")
             for nick in nicks:
+                if len(nick) == 0:
+                    continue
                 user = self.find_user(nick)
                 if user == None:
                     user = irc_user(nick)
@@ -101,10 +101,11 @@ class channels:
             self.irc.modules.invoke('user_gone', user)
         elif msg.cmd == "JOIN":
             chan = msg.cmd_params[0]
-            nick, _ = msg.prefix.split("!", 1)
-            if nick == self.irc.nick:
-                return # channel possibly not inserted yet if it's our JOIN message
+            # add the channel if it's not yet in self.channels
+            if chan not in self.channels:
+                self.channels[chan] = irc_channel(chan)
             # create new user or get from other channels
+            nick, _ = msg.prefix.split("!", 1)
             user = self.find_user(nick)
             if user == None:
                 user = irc_user(nick)

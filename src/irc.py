@@ -196,6 +196,9 @@ class irc:
             # join auto-join channels
             for chan in self.auto_join:
                 self.send("JOIN " + chan)
+            # set some modes we care about (NOTE: these are non-standard)
+            # B: we're a bot, T: don't get CTCPs
+            self.send("MODE " + self.nick + " +BT")
 
         # Initialization phase is finished, begin processing messages
 

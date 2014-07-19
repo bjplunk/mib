@@ -104,7 +104,12 @@ class irc:
             # process message if a full message has been received
             if bs.find(b"\r\n") != -1:
                 bs = bs[:-2] # remove \r\n
-                self.recv_handle(bs.decode('utf-8'))
+                try:
+                    decoded_msg = bs.decode('utf-8')
+                    self.recv_handle(decoded_msg)
+                except UnicodeDecodeError:
+                    # Warn user that he's sending weird characters
+                    self.point_laugh(bs)
                 bs = b""
 
             # handle sending of queues
@@ -221,3 +226,18 @@ class irc:
                 self.commands.priv_msg(user, message)
                 self.modules.invoke('priv_msg', user, message)
 
+    def point_laugh(self, byte_str):
+        # We should be able to read up until PRIVMSG as ASCII and figure out the channel
+        ascii_str = ""
+        for c in byte_str:
+            if c > 127:
+                break
+            ascii_str += str(chr(c))
+        if ascii_str.find("PRIVMSG") != -1:
+            user, _ = ascii_str.split("!", 1)
+            user = user[1:] # skip : part of prefix
+            _, chan = ascii_str.split("PRIVMSG ", 1)
+            chan, _ = chan.split(" ", 1)
+            if len(chan) > 0 and chan[0] == "#" and chan in self.channels.channels:
+                self.chan_msg(self.channels.channels[chan],
+                    user + " is not using utf-8 to encode his messages, let's all point and laugh. (http://utf8everywhere.org/)")

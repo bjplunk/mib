@@ -57,6 +57,7 @@ class commands:
         # invoke command
         params = self.get_params(user, cmd_obj, msg)
         if params != None:
+            print(self.irc.command_char + cmd + " invoked by " + user.nick + " in " + channel.name)
             cmd_obj.func(channel, user, params)
 
     def priv_msg(self, user, msg):
@@ -86,6 +87,7 @@ class commands:
         # invoke command
         params = self.get_params(user, cmd_obj, msg)
         if params != None:
+            print(self.irc.command_char + cmd + " invoked by " + user.nick + " in PM")
             cmd_obj.func(None, user, params)
 
     def next_arg(msg):

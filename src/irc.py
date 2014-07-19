@@ -34,10 +34,12 @@ class irc:
             self.sock.close();
 
     def chan_msg(self, channel, msg, queue=2, user=None):
+        print("<" + self.nick + " (" + channel.name + ", " + str(queue) + ")> " + msg)
         s = "PRIVMSG " + channel.name + " :" + msg
         self.send(s, queue, user)
 
     def priv_msg(self, user, msg, queue=2):
+        print("<" + self.nick + " (" + user.nick + ", " + str(queue) + ")> " + msg)
         s = "PRIVMSG " + user.nick + " :" + msg
         self.send(s, queue, user)
 

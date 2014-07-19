@@ -147,6 +147,8 @@ class channels:
             if msg.cmd_params[0][0] == "#":
                 chan = msg.cmd_params[0]
                 nick, _ = msg.prefix.split("!", 1)
+                if chan not in self.channels:
+                    return
                 user = self.channels[chan].user(nick)
 
                 # ignore messages sent to channel by user not in channel

@@ -1,4 +1,4 @@
-import importlib, os
+import importlib, os, sys
 
 class module:
     def __init__(self, irc, name, module):
@@ -54,7 +54,14 @@ class modules:
 
         files = []
 
-        ls = os.listdir("modules")
+        try:
+            ls = os.listdir("modules")
+        except OSError:
+            try:
+                ls = os.listdir("src/modules")
+            except:
+                sys.exit("Could not find modules directory.")
+
         for f in ls:
             if f.startswith(".") or f.startswith("_"):
                 continue

@@ -70,62 +70,89 @@ class channels:
             chan_name = msg.cmd_params[2]
             if chan_name not in self.channels:
                 self.channels[chan_name] = irc_channel(chan_name)
+
             # add all listed users
             nicks = [msg.cmd_params[3]]
             if nicks[0].find(" ") != -1:
                 nicks = nicks[0].split(" ")
+
+            nick_lst = []
             for nick in nicks:
                 if len(nick) == 0:
                     continue
+
                 user = self.find_user(nick)
                 if user == None:
                     user = irc_user(nick)
                 if user not in self.channels[chan_name].users:
                     self.channels[chan_name].users.append(user)
+                nick_lst.append(nick)
+
+            print("RPL_NAMREPLY: " + str(nick_lst))
+
         elif msg.cmd == "PART":
             chan = msg.cmd_params[0]
-            nick = msg.cmd_params[1]
-            print(nick + " left " + chan + " (" + msg.cmd + ")")
+            nick, _ = msg.prefix.split("!", 1)
+            print(nick + " left " + chan)
+
             user = self.channels[chan].user(nick)
             self.channels[chan].users.remove(user)
             self.irc.modules.invoke('chan_quit', self.channels[chan], user, "leave")
             if self.find_user(nick) == None:
                 self.irc.modules.invoke('user_gone', user)
+
         elif msg.cmd == "QUIT":
             nick, _ = msg.prefix.split("!", 1)
+            print(nick + " quit irc")
+
             for _, channel in self.channels.items():
                 user = channel.user(nick)
                 if user != None:
                     channel.users.remove(user)
                     self.irc.modules.invoke('chan_quit', channel, user, "quit")
             self.irc.modules.invoke('user_gone', user)
+
         elif msg.cmd == "JOIN":
             chan = msg.cmd_params[0]
+            nick, _ = msg.prefix.split("!", 1)
+            print(nick + " joined " + chan)
+
             # add the channel if it's not yet in self.channels
             if chan not in self.channels:
                 self.channels[chan] = irc_channel(chan)
+
             # create new user or get from other channels
-            nick, _ = msg.prefix.split("!", 1)
             user = self.find_user(nick)
             if user == None:
                 user = irc_user(nick)
+
             # add to this channel and invoke chan_join
             if user not in self.channels[chan].users:
                 self.channels[chan].users.append(user)
                 self.irc.modules.invoke('chan_join', self.channels[chan], user)
+
         elif msg.cmd == "MODE":
             self.handle_mode(msg)
+
         elif msg.cmd == "NICK":
             prev_nick, _ = msg.prefix.split("!", 1)
             new_nick = msg.cmd_params[0]
-            user = self.find_user(nick)
-            user.nick = nick
+            print(prev_nick + " changed NICK to " + new_nick)
+
+            user = self.find_user(prev_nick)
+            user.nick = new_nick
             # user.hostmask will be updated on next PRIVMSG
+
         elif msg.cmd == "PRIVMSG":
             if msg.cmd_params[0][0] == "#":
                 chan = msg.cmd_params[0]
                 nick, _ = msg.prefix.split("!", 1)
                 user = self.channels[chan].user(nick)
+
+                # ignore messages sent to channel by user not in channel
+                if user == None:
+                    return
+
                 if user.hostmask != msg.prefix:
                     user.hostmask = msg.prefix
                 user.extract_hostname(msg.prefix)

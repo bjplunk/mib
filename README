@@ -13,4 +13,4 @@ To extend the bot's functionality you can create modules. Modules are located
 in src/modules/. Inside of said directory you will find a README file
 describing the process.
 
-The MIB repository can be found online at: https://bitbucket.org/shiro91/mib
+The MIB repository can be found online at: https://github.com/ccshiro/mib

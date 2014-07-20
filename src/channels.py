@@ -28,7 +28,7 @@ class irc_user:
 
 class irc_channel:
     def __init__(self, name):
-        self.name = name
+        self.name = name.lower()
         self.users = []
 
     def user(self, nick):
@@ -67,7 +67,7 @@ class channels:
     def raw_msg(self, msg):
         if msg.cmd == "353":
             # add the channel if it's not yet in self.channels
-            chan_name = msg.cmd_params[2]
+            chan_name = msg.cmd_params[2].lower()
             if chan_name not in self.channels:
                 self.channels[chan_name] = irc_channel(chan_name)
 
@@ -91,7 +91,7 @@ class channels:
             print("RPL_NAMREPLY: " + str(nick_lst))
 
         elif msg.cmd == "PART":
-            chan = msg.cmd_params[0]
+            chan = msg.cmd_params[0].lower()
             nick, _ = msg.prefix.split("!", 1)
             print(nick + " left " + chan)
 
@@ -113,7 +113,7 @@ class channels:
             self.irc.modules.invoke('user_gone', user)
 
         elif msg.cmd == "JOIN":
-            chan = msg.cmd_params[0]
+            chan = msg.cmd_params[0].lower()
             nick, _ = msg.prefix.split("!", 1)
             print(nick + " joined " + chan)
 
@@ -145,7 +145,7 @@ class channels:
 
         elif msg.cmd == "PRIVMSG":
             if msg.cmd_params[0][0] == "#":
-                chan = msg.cmd_params[0]
+                chan = msg.cmd_params[0].lower()
                 nick, _ = msg.prefix.split("!", 1)
                 if chan not in self.channels:
                     return

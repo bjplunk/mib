@@ -238,6 +238,7 @@ class irc:
             user = user[1:] # skip : part of prefix
             _, chan = ascii_str.split("PRIVMSG ", 1)
             chan, _ = chan.split(" ", 1)
+            chan = chan.lower()
             if len(chan) > 0 and chan[0] == "#" and chan in self.channels.channels:
                 self.chan_msg(self.channels.channels[chan],
                     user + " is not using utf-8 to encode his messages, let's all point and laugh. (http://utf8everywhere.org/)")

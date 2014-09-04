@@ -89,6 +89,37 @@ def handouts_callback(chan, user, params):
     else:
         irc.priv_msg(user, "pass on or off")
 
+def accinfo_callback(chan, user, params):
+    global irc
+    # find the user in any channel we're in
+    tar_user = irc.channels.find_user(params.name)
+    if tar_user == None:
+        irc.priv_msg(user, "Could not find user with that name")
+        return
+
+    db = dbm.open("account", "c")
+    if tar_user.hostname.encode('utf-8') in db:
+        irc.priv_msg(user, "That user has the account: " + db[user.hostname.encode('utf-8')].decode('utf-8') + ".")
+    else:
+        irc.priv_msg(user, "That user does not have an account.")
+    db.close()
+
+def accreset_callback(chan, user, params):
+    global irc
+    # find the user in any channel we're in
+    tar_user = irc.channels.find_user(params.name)
+    if tar_user == None:
+        irc.priv_msg(user, "Could not find user with that name")
+        return
+
+    db = dbm.open("account", "c")
+    if tar_user.hostname.encode('utf-8') in db:
+        del db[tar_user.hostname.encode('utf-8')]
+        irc.priv_msg(user, "User is now able to check out another account")
+    else:
+        irc.priv_msg(user, "That user does not have an account.")
+    db.close()
+
 def init(irc_handle):
     global irc
     irc = irc_handle
@@ -98,5 +129,9 @@ def get_commands():
         {'name': "account", 'type': "both", 'priv': 0, 'func': account_callback,
         'help': "request a game account that will be used in the upcoming text, make sure to save the credentials as you can only request one account"},
         {'name': "handouts", 'type': "priv", 'priv': 100, 'func': handouts_callback,
-        'args': ["state"], 'optargs': ["paste"], 'help': "toggle if people can check out accounts or not, pass on or off"}
+        'args': ["state"], 'optargs': ["paste"], 'help': "toggle if people can check out accounts or not, pass on or off"},
+        {'name': "accinfo", 'type': "priv", 'priv': 100, 'func': accinfo_callback,
+        'args': ["name"], 'help': "check what account this user has checked out" },
+        {'name': "accreset", 'type': "priv", 'priv': 100, 'func': accreset_callback,
+        'args': ["name"], 'help': "allows this user to check out another account" }
     ]
